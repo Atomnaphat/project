@@ -64,7 +64,7 @@ app.get('/logout',(req,res)=>{
 });
 
 // page => Error
-app.get('*',(req,res)=>{
+app.get('*',(req, res)=>{
     res.send('ไม่พบหน้าที่คุณร้องขอ (Error: 404 Page Not Found)')
 })
 
