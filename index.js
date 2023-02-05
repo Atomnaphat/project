@@ -2,8 +2,8 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const mongoose= require('mongoose')
 
-const dbConfig = require('./config/mongodb.config.js')
-const Customer = require('./models/customer.js')
+const dbConfig = require('./mongoDB/config/mongodb.config.js')
+const Customer = require('./mongoDB/models/customer.js')
 
 const cors = require('cors')
 const app = express();
@@ -29,7 +29,7 @@ mongoose.connect(dbConfig.url)
     })
 
 app.use(cors())
-require('./routes/customer.route.js')(app);
+require('./mongoDB/routes/customer.route.js')(app);
 
 const server = app.listen(3000, ()=>{
     let port = server.address().port
