@@ -1,62 +1,72 @@
-const express = require('express')
-const bodyParser = require('body-parser')
-const mongoose= require('mongoose')
+// Import library
+const express = require('express');
+const cookieParser = require("cookie-parser");
+const sessions = require('express-session');
 
-const dbConfig = require('./mongoDB/config/mongodb.config.js')
-const Customer = require('./mongoDB/models/customer.js')
-
-const cors = require('cors')
+// Initail exprees app
 const app = express();
+const PORT = 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({
-    extended: true
-}))
+// Add the Express-session options
+const oneDay = 1000 * 60 * 60 * 24;
+app.use(sessions({
+    secret: "thisismysecrctekey",
+    saveUninitialized:true,
+    cookie: { maxAge: oneDay},
+    resave:false
+}));
 
-mongoose.Promise = global.Promise;
-mongoose.connect(dbConfig.url)
-    .then(()=>{
-        Customer.deleteMany({},(err)=>{
-    if (err){
-        process.exit();
-            }
-            console.log('Remove Collection of Customer')
-            initCustomer();
-        });
-    }).catch(err=>{
-        console.log('Cannot Connect to MongoDB')
-        process.exit();
-    })
+// Parsing the incoming data
+app.use(express.json())
+app.use(express.urlencoded({ extended:true}));
 
-app.use(cors())
-require('./mongoDB/routes/customer.route.js')(app);
+// Serving public file
+app.use(express.static(__dirname));
 
-const server = app.listen(3000, ()=>{
-    let port = server.address().port
-    console.log('Run at http://localhost:%s',port)
+// Cookie parser middleware
+app.use(cookieParser());
+
+// Setup authentication credential
+const myusername = 'admin'
+const mypassword = '12345'
+
+// a variable to save a session
+var session;
+
+
+
+// page => Welcome
+app.get('/',(req,res)=>{
+    session = req.session;
+    if(session.userid){
+        res.send("Welcome User <a href=\'/logout'>click to logout</a>");
+    }else
+    res.sendFile('views/index.html',{root:__dirname})
+});
+
+// page => User
+app.post('/user',(req,res)=>{
+    if(req.body.username == myusername && req.body.password == mypassword){
+        session=req.session;
+        session.userid=req.body.username;
+        console.log(req.session)
+        res.send()
+    }
+    else{
+        res.send('Inalid username or password');
+    }
 })
 
-function initCustomer(){
-    let data = [
-        {
-            CustomerId: 1001,
-            FullName: "ton",
-            Address: "asa"
-        },
-        {
-            CustomerId: 1002,
-            FullName: "aaaaa",
-            Address: "aaaaaaa"
-        },
-        {
-            CustomerId: 1003,
-            FullName: "asd",
-            Address: "sadsda"
-        },
-    ]
-    for(let i=0; i<data.length; i++){
-        const c = new Customer(data[i]);
-        c.save()
-    }
-    console.log("สร้างข้อมูล Customer สำเร็จแล้ว")
-}
+// page => Logout
+app.get('/logout',(req,res)=>{
+    req.session.destroy();
+    res.redirect('/');
+});
+
+// page => Error
+app.get('*',(req,res)=>{
+    res.send('ไม่พบหน้าที่คุณร้องขอ (Error: 404 Page Not Found)')
+})
+
+app.listen(PORT,()=> console.log(`Server Running at port ${PORT}`));
+
